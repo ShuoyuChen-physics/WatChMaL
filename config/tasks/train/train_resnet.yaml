@@ -1,4 +1,4 @@
-epochs: 20
+epochs: 50
 
 val_interval: 100
 num_val_batches: 32
@@ -8,12 +8,12 @@ checkpointing: False
 data_loaders:
   train:
     split_key: train_idxs
-    batch_size: 1024
-    num_workers: 4
-    pre_transforms:
-      - random_reflections
+    batch_size: 128
+    num_workers: 1
+    # pre_transforms:
+    #   - random_reflections
   validation:
     split_key: val_idxs
-    batch_size: 1024
-    num_workers: 4
+    batch_size: 128
+    num_workers: 1
     drop_last: true
