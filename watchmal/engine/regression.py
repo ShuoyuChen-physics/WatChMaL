@@ -80,14 +80,23 @@ class RegressionEngine(ReconstructionEngine):
             target = torch.column_stack([(v - self.offset[t]) / self.scale[t] for t, v in self.target.items()])
             # evaluate the model on the data and reshape output to match the target
             model_out = self.model(self.data).reshape(target.shape)
+            print(['Val', 'Train'][train], end='\t')
+            print(f'M:{model_out[0].tolist()};T:{target[0].tolist()}')
             # calculate the loss
+            target = target.to(torch.float32)
+            model_out = model_out.to(torch.float32)
             self.loss = self.criterion(model_out, target)
             # split the output for each target
             split_model_out = torch.split(model_out, self.target_sizes, dim=1)
             # return outputs including the unscaled target dictionary plus elements for the corresponding predictions
-            outputs = self.target | {"predicted_"+t: o*self.scale[t] + self.offset[t]
-                                     for t, o in zip(self.target.keys(), split_model_out)}
-            metrics = {t+" error": metric_functions[t](outputs["predicted_"+t], v)
-                       for t, v in self.target.items() if t in metric_functions}
+            outputs = self.target.copy()
+            predicted_dict = {
+                "predicted_" + t: o * self.scale[t] + self.offset[t]
+                for t, o in zip(self.target.keys(), split_model_out)
+            }
+            outputs.update(predicted_dict)
+            metrics = {}
+            # metrics = {t+" error": metric_functions[t](outputs["predicted_"+t], v)
+            #            for t, v in self.target.items() if t in metric_functions}
             metrics['loss'] = self.loss
         return outputs, metrics

@@ -1,5 +1,5 @@
 _target_: watchmal.dataset.cnn.cnn_dataset.CNNDataset
-pmt_positions_file: /home/shuoyu/workspace/tt.npz
-
+pmt_positions_file: /home/shuoyu/workspace/WatChMal/HK_20inchPMT_image_positions.npz
+#collapse_arrays: False
 use_times: True
 use_charges: True
