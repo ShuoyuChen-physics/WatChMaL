@@ -1,0 +1,19 @@
+gpu_list:
+  - 0
+  - 1
+  - 2
+  - 3
+seed: 1111
+dump_path: './outputs/'
+model:
+  num_output_channels: 3
+defaults:
+  - data: hk_test
+  - data/dataset: hk_cnn_test
+  - model: resnet50
+  - engine: regression_dire
+  - tasks/restore_state: restore_state
+  - tasks/evaluate: test
+  - loss@tasks.evaluate.loss: huber_dire
+  - sampler@tasks.evaluate.data_loaders.test.sampler: subset_sequential
+  - _self_

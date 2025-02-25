@@ -1,0 +1,3 @@
+split_path: /home/shuoyu/workspace/train/e_0_range2gev_1m.npz
+dataset:
+  h5file: /home/shuoyu/workspace/train/e_0_range2gev_1m.h5

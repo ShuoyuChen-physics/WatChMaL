@@ -1,0 +1,23 @@
+gpu_list:
+  - 0
+  - 1
+  - 2
+  - 3
+seed: 1111
+dump_path: './outputs/'
+model:
+  num_output_channels: 3
+defaults:
+  - data: hk_test
+  - data/dataset: hk_cnn_test
+  - model: resnet50
+  - engine: regression_posi
+  - tasks/train: train_resnet
+  - optimizers@tasks.train.optimizers: adam_posi
+  - loss@tasks.train.loss: huber_posi
+  - sampler@tasks.train.data_loaders.train.sampler: subset_random
+  - sampler@tasks.train.data_loaders.validation.sampler: subset_random
+  - tasks/restore_best_state: restore_best_state
+  - tasks/evaluate: test
+  - sampler@tasks.evaluate.data_loaders.test.sampler: subset_sequential
+  - _self_
