@@ -1,5 +1,5 @@
-_target_: watchmal.model.resnet.resnet50
+_target_: watchmal.model.resnet.resnet152
 num_input_channels: 2
 num_output_channels: 1
 conv_pad_mode: circular
-dropout_p: 0.015
+dropout_p: 0.05
