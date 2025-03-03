@@ -10,7 +10,7 @@ model:
 defaults:
   - data: hk_test
   - data/dataset: hk_cnn_test
-  - model: resnet50
+  - model: resnet152
   - engine: regression_posi
   - tasks/train: train_resnet
   - optimizers@tasks.train.optimizers: adam_posi
