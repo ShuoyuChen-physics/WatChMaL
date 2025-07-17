@@ -1,0 +1,17 @@
+_target_: watchmal.loss.uncertainty_loss.UncertaintyLoss
+
+task_losses:
+  positions:
+    _target_: watchmal.loss.position_huber.PositionHuberLoss
+    delta: 60                            
+  directions:
+    _target_: watchmal.loss.direction_huber.DirectionHuberLoss 
+    delta: 0.001
+  energies:
+    _target_: watchmal.loss.relative_huber.RelativeHuberLoss
+    delta: 0.7                           
+
+initial_variances:
+    positions: 1400000  
+    directions: 0.001
+    energies: 1.1

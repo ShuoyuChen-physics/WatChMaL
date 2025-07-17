@@ -19,7 +19,9 @@ from torch.nn.parallel import DistributedDataParallel
 # WatChMaL imports
 from watchmal.dataset.data_utils import get_data_loader
 from watchmal.utils.logging_utils import CSVLog
-
+from transformers import get_scheduler
+from torch.amp import GradScaler, autocast
+from omegaconf import OmegaConf, open_dict
 log = logging.getLogger(__name__)
 
 
@@ -49,7 +51,7 @@ class ReconstructionEngine(ABC):
         self.model = model
         self.device = torch.device(device)
         self.target_key = target_key
-
+        self.scaler = GradScaler("cuda")  
         # Set up the parameters to save given the model type
         if isinstance(self.model, DistributedDataParallel):
             self.is_distributed = True
@@ -81,11 +83,22 @@ class ReconstructionEngine(ABC):
 
     def configure_optimizers(self, optimizer_config):
         """Instantiate an optimizer from a hydra config."""
-        self.optimizer = instantiate(optimizer_config, params=self.module.parameters())
+        params_to_optimize = [{'params': self.module.parameters()}]
+        if self.criterion is not None and list(self.criterion.parameters()):
+            if self.rank == 0:
+                print("Criterion has trainable parameters, adding them to optimizer.")
+            params_to_optimize.append({'params': self.criterion.parameters()})
+        else:
+            if self.rank == 0:
+                print("Criterion has no trainable parameters, optimizing model parameters only.")
+        optimizer_partial = instantiate(optimizer_config, _partial_=True)
+        self.optimizer = optimizer_partial(params=params_to_optimize)
         total_params = sum(p.numel() for p in self.module.parameters() if p.requires_grad)
         opt_params = sum(p.numel() for g in self.optimizer.param_groups for p in g['params'])
-        print(f"Total trainable parameters: {total_params}")
-        print(f"Parameters passed to optimizer: {opt_params}")
+        if self.criterion is not None:
+            total_params += sum(p.numel() for p in self.criterion.parameters() if p.requires_grad)
+        print(f"Total trainable parameters (model + loss): {total_params}")
+        print(f"Total parameters passed to optimizer: {opt_params}")
 
     def configure_scheduler(self, scheduler_config):
         """Instantiate a scheduler from a hydra config."""
@@ -151,13 +164,16 @@ class ReconstructionEngine(ABC):
             Dictionary containing mean of tensor values gathered from all processes
         """
         global_metric_dict = {}
-        for name, tensor in zip(metric_dict.keys(), metric_dict.values()):
+        for name, tensor in metric_dict.items():
+            tensor = tensor.to(self.device)
+           
             if self.is_distributed:
                 torch.distributed.reduce(tensor, 0)
                 if self.rank == 0:
-                    global_metric_dict[name] = tensor.item()/self.n_gpus
+                    global_metric_dict[name] = tensor.item() / self.n_gpus
             else:
                 global_metric_dict[name] = tensor.item()
+                
         return global_metric_dict
 
     @abstractmethod
@@ -227,11 +243,13 @@ class ReconstructionEngine(ABC):
                 # Prepare the data for forward pass
                 self.process_data(train_data)
                 # Call forward: make a prediction & measure the average error
-                outputs, metrics = self.forward(True)
-                # Convert torch tensors containing each metric into scalar
+                with autocast(device_type='cuda'):
+                    outputs, metrics = self.forward(True)
                 metrics = {k: v.item() for k, v in metrics.items()}
-                # Call backward: back-propagate error and update weights using loss = self.loss
-                self.backward()
+                self.optimizer.zero_grad()
+                self.scaler.scale(self.loss).backward()
+                self.scaler.step(self.optimizer)
+                self.scaler.update()
                 # run scheduler
                 if self.scheduler is not None:
                     self.scheduler.step()
@@ -263,6 +281,7 @@ class ReconstructionEngine(ABC):
             log.info(f"Training {epochs} epochs completed in {datetime.now()-start_time}")
             self.val_log.close()
 
+
     def validate(self, val_iter, num_val_batches, checkpointing):
         """
         Perform validation with the current state, on a number of batches of the validation set.
@@ -278,7 +297,6 @@ class ReconstructionEngine(ABC):
         """
         # set model to eval mode
         self.model.eval()
-
         val_metrics = None
         for val_batch in range(num_val_batches):
             # get validation data mini-batch
@@ -318,7 +336,6 @@ class ReconstructionEngine(ABC):
                 self.save_state()
             self.val_log.log(log_entries)
         # return model to training mode
-
         self.model.train()
 
     def evaluate(self, report_interval=20):

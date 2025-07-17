@@ -10,11 +10,11 @@ defaults:
   - data/dataset: hk_vit
   - model: transformer_swin
   - engine: regression_momentum
- # - tasks/restore_state: restore_state_tr
+  - tasks/restore_state: restore_state_tr
   - tasks/train: train_transformer
   - optimizers@tasks.train.optimizers: adamW_momentum
   - scheduler@tasks.train.scheduler: cosinelr
   - loss@tasks.train.loss: huber_momentum
-  - sampler@tasks.train.data_loaders.train.sampler: subset_sequential
-  - sampler@tasks.train.data_loaders.validation.sampler: subset_sequential
+  - sampler@tasks.train.data_loaders.train.sampler: subset_random
+  - sampler@tasks.train.data_loaders.validation.sampler: subset_random
   - _self_

@@ -1,0 +1,2 @@
+_target_: watchmal.engine.regression.MultiTaskRegressionEngine
+target_key: ['positions','directions','energies']

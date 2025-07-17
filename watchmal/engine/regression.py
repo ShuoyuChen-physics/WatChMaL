@@ -91,3 +91,40 @@ class RegressionEngine(ReconstructionEngine):
                        for t, v in self.target.items() if t in metric_functions}
             metrics['loss'] = self.loss
         return outputs, metrics
+
+class MultiTaskRegressionEngine(RegressionEngine):
+   
+    def __init__(self, target_key, model, rank, device, dump_path, **kwargs):
+
+        super().__init__(target_key, model, rank, device, dump_path, **kwargs)
+
+    def forward(self, train=True):
+        with torch.set_grad_enabled(train):
+            model_out_dict = self.model(self.data)
+            scaled_target_dict = {
+                t: (self.target[t] - self.offset.get(t, 0.0)) / self.scale.get(t, 1.0)
+                for t in self.target_key
+            }
+
+            self.loss, loss_details_dict = self.criterion(model_out_dict, scaled_target_dict)
+
+            outputs = {}
+            metrics = {}
+
+            for task in self.target_key:
+                prediction_scaled = model_out_dict[task]
+                target_raw = self.target[task] 
+
+                scale = self.scale.get(task, 1.0)
+                offset = self.offset.get(task, 0.0)
+                prediction_unscaled = prediction_scaled * scale + offset
+                
+                outputs["predicted_" + task] = prediction_unscaled
+                outputs[task] = target_raw
+                
+                if task in metric_functions:
+                    metrics[task + " error"] = metric_functions[task](prediction_unscaled, target_raw)
+            metrics.update(loss_details_dict)
+            metrics['loss'] = self.loss
+            
+        return outputs, metrics
