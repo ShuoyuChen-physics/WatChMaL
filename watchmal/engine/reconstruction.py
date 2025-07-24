@@ -83,11 +83,11 @@ class ReconstructionEngine(ABC):
 
     def configure_optimizers(self, optimizer_config):
         """Instantiate an optimizer from a hydra config."""
-        params_to_optimize = [{'params': self.module.parameters()}]
+        params_to_optimize = [{'params': self.module.parameters(), 'name': 'model_params'}]
         if self.criterion is not None and list(self.criterion.parameters()):
             if self.rank == 0:
                 print("Criterion has trainable parameters, adding them to optimizer.")
-            params_to_optimize.append({'params': self.criterion.parameters()})
+            params_to_optimize.append({'params': self.criterion.parameters(), 'name': 'loss_params'})
         else:
             if self.rank == 0:
                 print("Criterion has no trainable parameters, optimizing model parameters only.")
@@ -102,6 +102,7 @@ class ReconstructionEngine(ABC):
 
     def configure_scheduler(self, scheduler_config):
         """Instantiate a scheduler from a hydra config."""
+        self.num_warmup_steps = scheduler_config.get('num_warmup_steps', 0)
         self.scheduler = instantiate(scheduler_config, optimizer=self.optimizer)
 
     def configure_data_loaders(self, data_config, loaders_config, is_distributed, seed):

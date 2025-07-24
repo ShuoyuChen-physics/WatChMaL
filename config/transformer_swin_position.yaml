@@ -3,16 +3,18 @@ gpu_list:
   - 1
 seed: 8
 dump_path: './outputs/'
+model:
+  num_output_channels: 3
 defaults:
   - data: hk_split
   - data/dataset: hk_vit
-  - model: transformer_swin_mt
-  - engine: regression_mt
- # - tasks/restore_state: restore_state_tr
+  - model: transformer_swin
+  - engine: regression_position
+  #- tasks/restore_state: restore_state_tr
   - tasks/train: train_transformer
   - optimizers@tasks.train.optimizers: adamW_momentum
   - scheduler@tasks.train.scheduler: cosinelr
-  - loss@tasks.train.loss: huber_mt
+  - loss@tasks.train.loss: huber_position
   - sampler@tasks.train.data_loaders.train.sampler: subset_random
   - sampler@tasks.train.data_loaders.validation.sampler: subset_random
   - _self_

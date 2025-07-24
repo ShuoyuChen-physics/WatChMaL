@@ -1,3 +1,11 @@
+'''
+Author: Shuoyu Chen shuoyuchen.physics@gmail.com
+Date: 2025-07-22 19:45:09
+LastEditors: Shuoyu Chen shuoyuchen.physics@gmail.com
+LastEditTime: 2025-07-22 21:42:05
+FilePath: /schen/workspace/WatChMaL/watchmal/model/SwinTransformer.py
+Description: 
+'''
 """
 Here is a Swin Transformer model.
 """
@@ -64,3 +72,4 @@ class MultiTaskSwin(nn.Module):
             task_name: head(features) for task_name, head in self.task_heads.items()
         }
         return outputs
+    

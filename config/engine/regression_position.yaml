@@ -1,0 +1,3 @@
+_target_: watchmal.engine.regression.RegressionEngine
+target_key: ['positions',]
+target_scale_factor: 4000

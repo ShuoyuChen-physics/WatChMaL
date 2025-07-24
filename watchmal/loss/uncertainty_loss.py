@@ -2,7 +2,7 @@
 Author: Shuoyu Chen shuoyuchen.physics@gmail.com
 Date: 2025-07-16 11:05:40
 LastEditors: Shuoyu Chen shuoyuchen.physics@gmail.com
-LastEditTime: 2025-07-16 17:50:29
+LastEditTime: 2025-07-22 21:03:11
 FilePath: /schen/workspace/WatChMaL/watchmal/loss/uncertainty_loss.py
 Description: 
 '''

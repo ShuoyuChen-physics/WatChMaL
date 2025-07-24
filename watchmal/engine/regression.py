@@ -101,19 +101,24 @@ class MultiTaskRegressionEngine(RegressionEngine):
     def forward(self, train=True):
         with torch.set_grad_enabled(train):
             model_out_dict = self.model(self.data)
-            scaled_target_dict = {
-                t: (self.target[t] - self.offset.get(t, 0.0)) / self.scale.get(t, 1.0)
-                for t in self.target_key
-            }
+            scaled_target_dict = {}
 
+            for t in self.target_key:
+                scaled_target = (self.target[t] - self.offset.get(t, 0.0)) / self.scale.get(t, 1.0)
+                if scaled_target.shape[1] == 1 and len(scaled_target.shape) > 2:
+                    scaled_target = scaled_target.squeeze(1)
+                scaled_target_dict[t] = scaled_target
             self.loss, loss_details_dict = self.criterion(model_out_dict, scaled_target_dict)
-
+            
             outputs = {}
             metrics = {}
 
             for task in self.target_key:
                 prediction_scaled = model_out_dict[task]
+
                 target_raw = self.target[task] 
+                if target_raw.shape[1] == 1 and len(target_raw.shape) > 2:
+                    target_raw = target_raw.squeeze(1)
 
                 scale = self.scale.get(task, 1.0)
                 offset = self.offset.get(task, 0.0)

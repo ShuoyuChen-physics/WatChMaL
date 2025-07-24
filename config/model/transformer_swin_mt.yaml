@@ -3,10 +3,9 @@ _target_: watchmal.model.SwinTransformer.MultiTaskSwin
 img_size: [192, 192]
 in_chans: 2
 pretrained: False
-drop_path_rate: 0.2
+drop_path_rate: 0
 model_name: swin_tiny_patch4_window7_224
 task_output_dims:
   positions: 3
   directions: 3
   energies: 1
-          
